@@ -1,11 +1,3 @@
-# Fantareal 开发地图
-
-这是 [Fantareal](https://github.com/Frischar/Fantareal) 的**开发导航仓库**。你不会编程也能修 Bug、加 Mod——Git 克隆下来，用 AI 工具打开，第一句话让它读这份文档就行。
-
-## 原理
-
-AI 编程工具不会自动理解你的项目。这个仓库提供了一份精确到每个函数的**项目地图**（`maps/说明书.md` + `maps/说明书_auto.md`），AI 读完就知道每个功能在哪个文件的第几行。你只需要说人话，AI 负责定位代码、修改、解释。
-
 ## 如何使用
 
 ```bash
