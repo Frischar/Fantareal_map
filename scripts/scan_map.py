@@ -465,6 +465,7 @@ def main() -> None:
         "__pycache__", ".venv", "venv", ".git", "node_modules",
         "data", "Android APK", ".obsidian", ".mypy_cache", ".pytest_cache",
         ".tox", "dist", "build", "egg-info", "htmlcov",
+        "backups",  # 临时备份目录（如 codex_* / Codex 工作中留下的快照）
     }
     # Files that are clearly one-off / helper, not project source
     skip_prefixes = ("_custom_", "_gen_", "_merge_", "_generated_")

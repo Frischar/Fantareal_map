@@ -2,14 +2,17 @@
 Sync project map from the main Fantareal repo to this map repo.
 
 Two outputs:
-  1. maps/说明书.md      — copied from main repo (hand-written, with 常见坑 etc.)
-  2. maps/说明书_auto.md — fresh AST scan (line numbers always accurate)
+  1. maps/说明书_auto.md — fresh AST scan (line numbers always accurate)
+  2. maps/说明书_legacy.md — beta 仓库的手写说明书（仅当 --with-legacy 启用；默认 maps/说明书.md 是本仓库自维护的注释版地图）
+
+默认源：优先 ../Fantareal-beta（当前主分支），其次 ../Fantareal，最后 ../fantareal。
+可显式 --source /path/to/xxx 覆盖。
 
 Usage:
-    python scripts/sync_map.py                         # sync with ../Fantareal
-    python scripts/sync_map.py --source /path/to/Fantareal
-    python scripts/sync_map.py --skip-copy              # only AST scan
-    python scripts/sync_map.py --skip-scan              # only copy 说明书.md
+    python scripts/sync_map.py                                  # 仅 AST 扫描
+    python scripts/sync_map.py --source /path/to/Fantareal-beta
+    python scripts/sync_map.py --with-legacy                    # 同时把 beta 的手写说明书复制为 说明书_legacy.md
+    python scripts/sync_map.py --skip-scan                      # 仅复制手写说明书
 """
 
 import argparse
@@ -20,8 +23,15 @@ from pathlib import Path
 
 
 def find_main_repo(map_repo: Path) -> Path | None:
-    """Try to locate the main Fantareal repo relative to the map repo."""
+    """Try to locate the main Fantareal repo relative to the map repo.
+
+    Search order (first match wins):
+      1. Fantareal-beta  ← 当前主分支（用户实际在用的工作分支）
+      2. Fantareal       ← 主仓库名
+      3. fantareal       ← 小写别名
+    """
     candidates = [
+        map_repo.parent / "Fantareal-beta",
         map_repo.parent / "Fantareal",
         map_repo.parent / "fantareal",
     ]
@@ -71,8 +81,8 @@ def check_line_references(map_file: Path, main_repo: Path) -> list[str]:
 def main():
     parser = argparse.ArgumentParser(description="Sync project map from main repo")
     parser.add_argument("--source", type=Path, help="Path to main Fantareal repo")
-    parser.add_argument("--skip-copy", action="store_true", help="Skip copying 说明书.md")
-    parser.add_argument("--skip-scan", action="store_true", help="Skip AST scan")
+    parser.add_argument("--with-legacy", action="store_true", help="Also copy beta's hand-written 说明书.md as 说明书_legacy.md")
+    parser.add_argument("--skip-scan", action="store_true", help="Skip AST scanning (only copy legacy)")
     args = parser.parse_args()
 
     map_repo = Path(__file__).resolve().parent.parent
@@ -80,8 +90,8 @@ def main():
 
     if not source:
         print("ERROR: Cannot find main Fantareal repo.")
-        print("  Expected at: ../Fantareal (next to this map repo)")
-        print("  Or use: --source /path/to/Fantareal")
+        print("  Searched for: ../Fantareal-beta, ../Fantareal, ../fantareal")
+        print("  Or use: --source /path/to/Fantareal-beta")
         sys.exit(1)
 
     if not (source / "fantareal" / "app.py").exists():
@@ -92,13 +102,13 @@ def main():
     print(f"Map repo:  {map_repo}")
     print()
 
-    # Step 1: Copy hand-written 说明书
-    if not args.skip_copy:
+    # Step 1: Optionally copy beta's hand-written 说明书.md as 说明书_legacy.md
+    if args.with_legacy:
         source_map = source / "说明书.md"
-        dest_map = map_repo / "maps" / "说明书.md"
+        dest_map = map_repo / "maps" / "说明书_legacy.md"
         if source_map.exists():
             shutil.copy2(source_map, dest_map)
-            print("  Copied: 说明书.md → maps/说明书.md")
+            print("  Copied: 说明书.md → maps/说明书_legacy.md (legacy hand-written)")
             warnings = check_line_references(dest_map, source)
             if warnings:
                 print("  Warnings — referenced files not found:")
@@ -109,7 +119,7 @@ def main():
         else:
             print("  SKIP: 说明书.md not found in main repo.")
     else:
-        print("  SKIP: --skip-copy (not copying 说明书.md)")
+        print("  SKIP: --with-legacy not set (not copying beta's hand-written 说明书.md)")
 
     # Step 2: Run AST scanner for auto-generated map
     if not args.skip_scan:
